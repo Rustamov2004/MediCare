@@ -86,6 +86,12 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getDailyStats());
     }
 
+    // 5.1 Finance Summary -> GET /api/admin/finance-summary
+    @GetMapping("/finance-summary")
+    public ResponseEntity<com.example.medicare_api.payload.responce.FinanceSummaryResponse> getFinanceSummary(){
+        return ResponseEntity.ok(adminService.getFinanceSummary());
+    }
+
     // 6. Sana bo'yicha bemorlar -> GET /api/admin/patients-by-date?start=YYYY-MM-DD&end=YYYY-MM-DD
     @GetMapping("/patients-by-date")
     public ResponseEntity<List<VisitResponse>> patientsByDate(

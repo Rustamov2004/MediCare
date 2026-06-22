@@ -23,13 +23,16 @@ public class JwtTokenProvider {
     private int jwtExpirationInMs; // 1 kun default
 
     public String generateToken(Authentication authentication) {
-        String username = authentication.getName();
+        return generateTokenFromUsername(authentication.getName());
+    }
+
+    public String generateTokenFromUsername(String username) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
 
         return Jwts.builder()
                 .setSubject(username)
-                .setIssuedAt(new Date())
+                .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS512)
                 .compact();

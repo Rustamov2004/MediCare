@@ -36,6 +36,8 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
     List<Visit> findAllByDoctorIdAndDiagnosisIsNotNullAndCreatedAtBetween(Long doctorId, LocalDateTime start, LocalDateTime end);
 
+    List<Visit> findAllByDoctorIdAndDiagnosisIsNotNullOrderByCreatedAtDesc(Long doctorId);
+
     List<Visit> findAllByAdminId(Long adminId);
 
     // Admin uchun yakunlangan va rad etilgan muolajalar tarixi

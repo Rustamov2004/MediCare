@@ -23,6 +23,7 @@ public class UserResponse {
     private Role role;
     private String username;
     private String password; // used for returning generated passwords
+    private String token; // used for returning new token on profile update
     private String workDates;
     private String restDates;
 

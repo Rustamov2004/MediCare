@@ -266,6 +266,71 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    public com.example.medicare_api.payload.responce.FinanceSummaryResponse getFinanceSummary() {
+        Long adminId = securityUtils.getCurrentAdminId();
+        
+        LocalDate now = LocalDate.now();
+        LocalDateTime startOfMonth = now.withDayOfMonth(1).atStartOfDay();
+        LocalDateTime endOfMonth = now.withDayOfMonth(now.lengthOfMonth()).atTime(LocalTime.MAX);
+        
+        LocalDateTime startOfYear = now.withDayOfYear(1).atStartOfDay();
+        LocalDateTime endOfYear = now.withDayOfYear(now.lengthOfYear()).atTime(LocalTime.MAX);
+        
+        List<Visit> monthlyVisits = adminId == null 
+            ? visitRepository.findAllByCreatedAtBetween(startOfMonth, endOfMonth)
+            : visitRepository.findAllByAdminIdAndCreatedAtBetween(adminId, startOfMonth, endOfMonth);
+            
+        List<Visit> yearlyVisits = adminId == null 
+            ? visitRepository.findAllByCreatedAtBetween(startOfYear, endOfYear)
+            : visitRepository.findAllByAdminIdAndCreatedAtBetween(adminId, startOfYear, endOfYear);
+            
+        double monthlyIncome = monthlyVisits.stream()
+            .filter(v -> v.getStatus() != com.example.medicare_api.enums.VisitStatus.REJECTED && v.getStatus() != com.example.medicare_api.enums.VisitStatus.UNPAID)
+            .filter(v -> v.getPrice() != null)
+            .mapToDouble(Visit::getPrice)
+            .sum();
+            
+        double yearlyIncome = yearlyVisits.stream()
+            .filter(v -> v.getStatus() != com.example.medicare_api.enums.VisitStatus.REJECTED && v.getStatus() != com.example.medicare_api.enums.VisitStatus.UNPAID)
+            .filter(v -> v.getPrice() != null)
+            .mapToDouble(Visit::getPrice)
+            .sum();
+            
+        List<User> activeEmployees = adminId == null 
+            ? userRepository.findAllByActiveTrue()
+            : userRepository.findAllByAdminIdAndActiveTrue(adminId);
+            
+        double totalSalaries = 0.0;
+        
+        for (User u : activeEmployees) {
+            if (u.getSalaryAmount() != null) {
+                if ("MONTHLY".equals(u.getSalaryType())) {
+                    totalSalaries += u.getSalaryAmount();
+                } else if ("DAILY".equals(u.getSalaryType())) {
+                    totalSalaries += u.getSalaryAmount() * 30;
+                } else if ("PERCENTAGE".equals(u.getSalaryType())) {
+                    double percentage = u.getSalaryAmount();
+                    double empMonthlyIncome = monthlyVisits.stream()
+                        .filter(v -> v.getPrice() != null && v.getDoctor() != null && u.getId().equals(v.getDoctor().getId()))
+                        .mapToDouble(Visit::getPrice)
+                        .sum();
+                    totalSalaries += empMonthlyIncome * (percentage / 100.0);
+                }
+            }
+        }
+        
+        double netProfit = monthlyIncome - totalSalaries;
+        
+        return com.example.medicare_api.payload.responce.FinanceSummaryResponse.builder()
+            .monthlyIncome(monthlyIncome)
+            .yearlyIncome(yearlyIncome)
+            .totalSalaries(totalSalaries)
+            .netProfit(netProfit)
+            .build();
+    }
+
+
+    @Override
     public List<VisitResponse> getPatientsByDateRange(LocalDate start, LocalDate end) {
 
         LocalDateTime today = start.atStartOfDay();

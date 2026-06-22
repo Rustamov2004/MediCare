@@ -117,9 +117,7 @@ public class DoctorServiceImpl implements DoctorService {
 
     @Override
     public List<VisitResponse> getDoctorHistory(Long doctorId) {
-        LocalDateTime start = LocalDate.now().atStartOfDay();
-        LocalDateTime end = LocalDate.now().atTime(LocalTime.MAX);
-        List<Visit> visits = visitRepository.findAllByDoctorIdAndDiagnosisIsNotNullAndCreatedAtBetween(doctorId, start, end);
+        List<Visit> visits = visitRepository.findAllByDoctorIdAndDiagnosisIsNotNullOrderByCreatedAtDesc(doctorId);
         return mapper.toResponseList(visits);
     }
 

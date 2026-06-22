@@ -26,6 +26,7 @@ public interface AdminService {
 
     // Statistika va Monitoring
     StatsResponse getDailyStats(); // Bugungi tushum va bemorlar soni
+    com.example.medicare_api.payload.responce.FinanceSummaryResponse getFinanceSummary();
     List<VisitResponse> getPatientsByDateRange(LocalDate start, LocalDate end);
     List<VisitResponse> searchPatientsByName(String name);
     VisitResponse updateVisit(Long id, com.example.medicare_api.payload.request.PatientVisitRequest request);

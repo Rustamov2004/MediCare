@@ -26,4 +26,7 @@ public interface UserRepository extends JpaRepository<User,Long> {
     
     // Profilda login takrorlanishini oldini olish uchun
     boolean existsByUsernameAndIdNot(String username, Long id);
+
+    List<User> findAllByActiveTrue();
+    List<User> findAllByAdminIdAndActiveTrue(Long adminId);
 }

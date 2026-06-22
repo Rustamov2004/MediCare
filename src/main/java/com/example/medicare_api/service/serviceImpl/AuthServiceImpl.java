@@ -13,6 +13,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import com.example.medicare_api.entity.SystemLog;
+import com.example.medicare_api.repository.SystemLogRepository;
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -20,6 +24,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
+    private final SystemLogRepository systemLogRepository;
 
     @Override
     public JwtResponse login(LoginRequest loginRequest) {
@@ -51,6 +56,15 @@ public class AuthServiceImpl implements AuthService {
                 }
             }
         }
+
+        // Tizimga kirish logi
+        systemLogRepository.save(SystemLog.builder()
+                .performedBy(user)
+                .adminId(user.getAdminId() != null ? user.getAdminId() : user.getId())
+                .actionType("LOGIN")
+                .description(user.getFullName() + " tizimga kirdi")
+                .createdAt(LocalDateTime.now())
+                .build());
 
         return JwtResponse.builder()
                 .token(jwt)
