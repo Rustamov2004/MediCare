@@ -1,10 +1,8 @@
 package com.example.medicare_api.payload.responce;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,4 +16,4 @@ public class InventoryItemResponse {
     private int lowStockThreshold;
     private Long categoryId;
     private String categoryName;
-}
+}

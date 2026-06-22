@@ -1,8 +1,6 @@
 package com.example.medicare_api.entity;
-
 import jakarta.persistence.*;
 import lombok.*;
-
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
@@ -17,10 +15,9 @@ public class MedicalRecord {
     @OneToOne
     private Visit visit;
     @Column(columnDefinition = "TEXT")
-    private String diagnosis; // Tashxis
+    private String diagnosis; 
     @Column(columnDefinition = "TEXT")
-    private String treatment; // Muolaja tavsiyasi
-    private boolean needsProcedure; // Agar muolaja yozilsa true bo'ladi
-
+    private String treatment; 
+    private boolean needsProcedure; 
     private Long adminId;
-}
+}

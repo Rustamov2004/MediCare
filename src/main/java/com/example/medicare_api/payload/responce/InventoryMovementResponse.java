@@ -1,12 +1,9 @@
 package com.example.medicare_api.payload.responce;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import java.time.LocalDateTime;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -14,10 +11,10 @@ import java.time.LocalDateTime;
 public class InventoryMovementResponse {
     private Long id;
     private Long inventoryItemId;
-    private String type; // ADD, UPDATE, AUTO_DEDUCT, MANUAL_DEDUCT
+    private String type; 
     private int quantityChanged;
     private int balanceAfter;
     private String description;
     private String performedBy;
     private LocalDateTime createdAt;
-}
+}

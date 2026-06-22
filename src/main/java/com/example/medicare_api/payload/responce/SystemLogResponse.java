@@ -1,8 +1,6 @@
 package com.example.medicare_api.payload.responce;
-
 import lombok.*;
 import java.time.LocalDateTime;
-
 @Getter
 @Setter
 @Builder

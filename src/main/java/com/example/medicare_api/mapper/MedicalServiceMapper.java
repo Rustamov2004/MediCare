@@ -1,13 +1,10 @@
 package com.example.medicare_api.mapper;
-
 import com.example.medicare_api.entity.MedicalService;
 import com.example.medicare_api.payload.responce.MedicalServiceResponse;
 import org.mapstruct.Mapper;
 import org.springframework.stereotype.Component;
-
 import java.util.List;
 import java.util.stream.Collectors;
-
 @Mapper
 @Component
 public class MedicalServiceMapper {
@@ -30,8 +27,7 @@ public class MedicalServiceMapper {
                         .build()).collect(Collectors.toList()) : null)
                 .build();
     }
-
     public List<MedicalServiceResponse> toResponseList(List<MedicalService> services) {
         return services.stream().map(this::toResponse).collect(Collectors.toList());
     }
-}
+}

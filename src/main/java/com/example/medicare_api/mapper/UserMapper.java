@@ -1,15 +1,12 @@
 package com.example.medicare_api.mapper;
-
 import com.example.medicare_api.entity.User;
 import com.example.medicare_api.payload.request.UserRequest;
 import com.example.medicare_api.payload.responce.UserResponse;
 import lombok.NoArgsConstructor;
 import org.mapstruct.Mapper;
 import org.springframework.stereotype.Component;
-
 import java.util.List;
 import java.util.stream.Collectors;
-
 @Mapper
 @Component
 public class UserMapper {
@@ -21,13 +18,12 @@ public class UserMapper {
         user.setPhone(request.getPhone());
         user.setSpecialization(request.getSpecialization());
         user.setUsername(request.getUsername());
-        user.setPassword(request.getPassword()); // Service'da encode qilinadi
+        user.setPassword(request.getPassword()); 
         user.setRole(request.getRole());
         user.setSalaryType(request.getSalaryType());
         user.setSalaryAmount(request.getSalaryAmount());
         return user;
     }
-
     public UserResponse toResponse(User user) {
         if (user == null) return null;
         return UserResponse.builder()
@@ -48,8 +44,7 @@ public class UserMapper {
                 .restDates(user.getRestDates())
                 .build();
     }
-
     public List<UserResponse> toResponseList(List<User> users) {
         return users.stream().map(this::toResponse).collect(Collectors.toList());
     }
-}
+}

@@ -1,5 +1,4 @@
 package com.example.medicare_api.service.serviceImpl;
-
 import com.example.medicare_api.entity.User;
 import com.example.medicare_api.payload.request.ProfileUpdateRequest;
 import com.example.medicare_api.payload.responce.UserResponse;
@@ -18,11 +17,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-
 @Service
 @RequiredArgsConstructor
 public class ProfileServiceImpl implements ProfileService {
-
     private final UserRepository userRepository;
     private final SecurityUtils securityUtils;
     private final PasswordEncoder passwordEncoder;
@@ -30,7 +27,6 @@ public class ProfileServiceImpl implements ProfileService {
     private final NotificationRepository notificationRepository;
     private final ObjectMapper objectMapper;
     private final JwtTokenProvider jwtTokenProvider;
-
     @Override
     public UserResponse getMyProfile() {
         User user = securityUtils.getCurrentUser();
@@ -38,7 +34,6 @@ public class ProfileServiceImpl implements ProfileService {
             throw new RuntimeException("Foydalanuvchi topilmadi!");
         }
         UserResponse response = mapToResponse(user);
-        
         if (user.getAdminId() != null) {
             User admin = userRepository.findById(user.getAdminId()).orElse(null);
             if (admin != null) {
@@ -46,20 +41,15 @@ public class ProfileServiceImpl implements ProfileService {
                 response.setRestDates(admin.getRestDates());
             }
         }
-        
         return response;
     }
-
     @Override
     public UserResponse updateMyProfile(ProfileUpdateRequest request) {
         User user = securityUtils.getCurrentUser();
         if (user == null) {
             throw new RuntimeException("Foydalanuvchi topilmadi!");
         }
-
         Map<String, Map<String, String>> changes = new HashMap<>();
-
-        // Login bandligini tekshirish
         if (request.getUsername() != null && !request.getUsername().isBlank() && !request.getUsername().equals(user.getUsername())) {
             if (userRepository.existsByUsernameAndIdNot(request.getUsername(), user.getId())) {
                 throw new RuntimeException("Bu login avvalroq boshqa foydalanuvchi tomonidan olingan!");
@@ -70,7 +60,6 @@ public class ProfileServiceImpl implements ProfileService {
             changes.put("Login", change);
             user.setUsername(request.getUsername());
         }
-
         if (request.getFullName() != null && !request.getFullName().isBlank() && !request.getFullName().equals(user.getFullName())) {
             Map<String, String> change = new HashMap<>();
             change.put("old", user.getFullName());
@@ -78,7 +67,6 @@ public class ProfileServiceImpl implements ProfileService {
             changes.put("F.I.SH", change);
             user.setFullName(request.getFullName());
         }
-
         if (request.getPhone() != null && !request.getPhone().isBlank() && !request.getPhone().equals(user.getPhone())) {
             Map<String, String> change = new HashMap<>();
             change.put("old", user.getPhone());
@@ -86,7 +74,6 @@ public class ProfileServiceImpl implements ProfileService {
             changes.put("Telefon", change);
             user.setPhone(request.getPhone());
         }
-
         if (request.getPassword() != null && !request.getPassword().isBlank() && !request.getPassword().equals(user.getPlainPassword())) {
             Map<String, String> change = new HashMap<>();
             change.put("old", "******");
@@ -95,18 +82,14 @@ public class ProfileServiceImpl implements ProfileService {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
             user.setPlainPassword(request.getPassword());
         }
-
         userRepository.save(user);
-
         String detailsJson = null;
         if (!changes.isEmpty()) {
             try {
                 detailsJson = objectMapper.writeValueAsString(changes);
             } catch (Exception e) {}
         }
-
         if (!changes.isEmpty()) {
-            // Log yaratish
             systemLogRepository.save(SystemLog.builder()
                     .performedBy(user)
                     .adminId(user.getAdminId() != null ? user.getAdminId() : user.getId())
@@ -116,15 +99,12 @@ public class ProfileServiceImpl implements ProfileService {
                     .createdAt(LocalDateTime.now())
                     .build());
         }
-
-        // Bildirishnoma yaratish
         User targetAdmin = null;
         if (user.getRole() == com.example.medicare_api.enums.Role.ADMIN) {
             targetAdmin = userRepository.findAllByRole(com.example.medicare_api.enums.Role.SUPER_ADMIN).stream().findFirst().orElse(null);
         } else if (user.getAdminId() != null) {
             targetAdmin = userRepository.findById(user.getAdminId()).orElse(null);
         }
-
         if (targetAdmin != null) {
             notificationRepository.save(Notification.builder()
                     .user(targetAdmin)
@@ -133,15 +113,12 @@ public class ProfileServiceImpl implements ProfileService {
                     .createdAt(LocalDateTime.now())
                     .build());
         }
-
         UserResponse response = mapToResponse(user);
         if (changes.containsKey("Login") || changes.containsKey("Parol")) {
             response.setToken(jwtTokenProvider.generateTokenFromUsername(user.getUsername()));
         }
-
         return response;
     }
-
     private UserResponse mapToResponse(User user) {
         UserResponse response = new UserResponse();
         response.setId(user.getId());
@@ -155,4 +132,4 @@ public class ProfileServiceImpl implements ProfileService {
         response.setRestDates(user.getRestDates());
         return response;
     }
-}
+}

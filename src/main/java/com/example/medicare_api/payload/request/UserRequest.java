@@ -1,12 +1,9 @@
 package com.example.medicare_api.payload.request;
-
 import com.example.medicare_api.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,7 +19,6 @@ public class UserRequest {
     private String password;
     private Role role;
     private String clinicName;
-
     private java.time.LocalDate subscriptionEndDate;
     private Boolean isSubscriptionActive;
-}
+}

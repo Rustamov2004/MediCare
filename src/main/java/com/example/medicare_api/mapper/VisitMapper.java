@@ -1,19 +1,15 @@
 package com.example.medicare_api.mapper;
-
 import com.example.medicare_api.entity.Visit;
 import com.example.medicare_api.payload.responce.VisitResponse;
 import org.mapstruct.Mapper;
 import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.stream.Collectors;
-
 @Mapper
 @Component
 public class VisitMapper {
-
     public VisitResponse toResponse(Visit visit) {
         if (visit == null) return null;
-
         return VisitResponse.builder()
                 .id(visit.getId())
                 .patientId(visit.getPatient() != null ? visit.getPatient().getId() : null)
@@ -33,13 +29,11 @@ public class VisitMapper {
                 .diagnosis(visit.getDiagnosis())
                 .paymentType(visit.getPaymentType() != null ? visit.getPaymentType().name() : null)
                 .time(visit.getCreatedAt())
-                // Vital ko'rsatkichlar
                 .bloodPressure(visit.getBloodPressure())
                 .temperature(visit.getTemperature())
                 .weight(visit.getWeight())
                 .build();
     }
-
     public List<VisitResponse> toResponseList(List<Visit> visits) {
         return visits.stream().map(this::toResponse).collect(Collectors.toList());
     }

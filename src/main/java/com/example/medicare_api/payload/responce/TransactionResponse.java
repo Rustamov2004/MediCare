@@ -1,11 +1,8 @@
 package com.example.medicare_api.payload.responce;
-
 import com.example.medicare_api.enums.TransactionType;
 import lombok.Builder;
 import lombok.Data;
-
 import java.time.LocalDateTime;
-
 @Data
 @Builder
 public class TransactionResponse {
@@ -15,4 +12,4 @@ public class TransactionResponse {
     private TransactionType type;
     private String description;
     private LocalDateTime createdAt;
-}
+}

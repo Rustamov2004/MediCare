@@ -1,5 +1,4 @@
 package com.example.medicare_api.service.serviceImpl;
-
 import com.example.medicare_api.entity.MedicalService;
 import com.example.medicare_api.entity.Patient;
 import com.example.medicare_api.entity.User;
@@ -21,31 +20,23 @@ import com.example.medicare_api.repository.VisitRepository;
 import com.example.medicare_api.service.ReceptionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.Optional;
-
 @Service
 @RequiredArgsConstructor
 public class ReceptionServiceImpl implements ReceptionService {
-
     private final UserRepository userRepository;
     private final VisitRepository visitRepository;
     private final MedicalServiceRepository medicalServiceRepository;
     private final PatientRepository patientRepository;
-
     private final UserMapper userMapper;
     private final VisitMapper visitMapper;
     private final MedicalServiceMapper medicalServiceMapper;
     private final com.example.medicare_api.security.SecurityUtils securityUtils;
-
     @Override
     public VisitResponse registerPatientVisit(PatientVisitRequest request) {
-
-        // 1. Bemorni qidiramiz, topilmasa yangi yaratib bazaga saqlaymiz
         Optional<Patient> byPhone = patientRepository.findByPhone(request.getPhone());
         Patient patient;
-
         if (byPhone.isPresent()) {
             patient = byPhone.get();
         } else {
@@ -55,30 +46,22 @@ public class ReceptionServiceImpl implements ReceptionService {
             patient.setAge(request.getAge());
             patient.setAddress(request.getAddress());
             patient.setAdminId(securityUtils.getCurrentAdminId());
-            // local o'zgaruvchi emas, tashqi o'zgaruvchiga tenglab saqlaymiz
             patient = patientRepository.save(patient);
         }
-
-        // 2. Xizmatni bazadan qidiramiz (majburiy)
         MedicalService service = medicalServiceRepository.findById(request.getServiceId())
                 .orElseThrow(() -> new RuntimeException("Xizmat topilmadi"));
-
-        // 3. Shifokor ID null bo'lishi mumkinligini tekshiramiz (MUHIM O'ZGARISh)
         User doctor = null;
         if (request.getDoctorId() != null) {
             doctor = userRepository.findById(request.getDoctorId())
                     .orElseThrow(() -> new RuntimeException("Doctor topilmadi"));
         }
-
-        // 4. Tashrif (Visit) obyektini yaratamiz
         Visit visit = new Visit();
         visit.setPatient(patient);
         visit.setService(service);
         visit.setStatus(VisitStatus.WAITING);
         visit.setPrice(service.getPrice());
-        visit.setDoctor(doctor); // Agar doctor null bo'lsa, bazaga shunchaki null tushadi (Muolaja holati uchun)
+        visit.setDoctor(doctor); 
         visit.setAdminId(securityUtils.getCurrentAdminId());
-
         if (request.getPaymentType() != null) {
             try {
                 visit.setPaymentType(com.example.medicare_api.enums.PaymentType.valueOf(request.getPaymentType().toUpperCase()));
@@ -88,12 +71,9 @@ public class ReceptionServiceImpl implements ReceptionService {
         } else {
             visit.setPaymentType(com.example.medicare_api.enums.PaymentType.CASH);
         }
-
         Visit save = visitRepository.save(visit);
-
         return visitMapper.toResponse(save);
     }
-
     @Override
     public List<UserResponse> getAllAvailableDoctors() {
         Long adminId = securityUtils.getCurrentAdminId();
@@ -102,7 +82,6 @@ public class ReceptionServiceImpl implements ReceptionService {
             : userRepository.findAllByRoleAndAdminId(Role.DOCTOR, adminId);
         return userMapper.toResponseList(allByRole);
     }
-
     @Override
     public List<MedicalServiceResponse> getServicesByType(boolean isCheckup) {
         ServiceType type = isCheckup ? ServiceType.CHECKUP : ServiceType.PROCEDURE;
@@ -113,21 +92,13 @@ public class ReceptionServiceImpl implements ReceptionService {
         System.out.println(allByType);
         return medicalServiceMapper.toResponseList(allByType);
     }
-
     @Override
     public List<MedicalServiceResponse> getServicesByDoctor(Long doctorId) {
-        // 1. Doctorni topamiz
         User doctor = userRepository.findById(doctorId)
                 .orElseThrow(() -> new RuntimeException("Shifokor topilmadi: id=" + doctorId));
-
-        // 2. Uning mutaxassisligini olamiz
         String specialization = doctor.getSpecialization();
-
-        // 3. Shu doctor ID ga mos CHECKUP xizmatlarini qaytaramiz
         List<MedicalService> services = medicalServiceRepository
                 .findAllByTypeAndDoctorId(ServiceType.CHECKUP, doctorId);
-
-        // Agar bu doctor uchun to'g'ridan to'g'ri xizmat topilmasa (eski xizmatlar), mutaxassislik bo'yicha qidiramiz
         if (services == null || services.isEmpty()) {
             if (specialization != null && !specialization.isBlank()) {
                 Long adminId = securityUtils.getCurrentAdminId();
@@ -145,7 +116,6 @@ public class ReceptionServiceImpl implements ReceptionService {
         }
         return medicalServiceMapper.toResponseList(services);
     }
-
     @Override
     public List<VisitResponse> getUnpaidProcedures() {
         Long adminId = securityUtils.getCurrentAdminId();
@@ -154,7 +124,6 @@ public class ReceptionServiceImpl implements ReceptionService {
                 : visitRepository.findAllByAdminIdAndStatus(adminId, VisitStatus.UNPAID);
         return visitMapper.toResponseList(unpaidVisits);
     }
-
     @Override
     public void approvePayment(Long visitId) {
         Visit visit = visitRepository.findById(visitId)
@@ -164,7 +133,6 @@ public class ReceptionServiceImpl implements ReceptionService {
             visitRepository.save(visit);
         }
     }
-
     @Override
     public void rejectPayment(Long visitId) {
         Visit visit = visitRepository.findById(visitId)
@@ -174,8 +142,6 @@ public class ReceptionServiceImpl implements ReceptionService {
             visitRepository.save(visit);
         }
     }
-
-    // Bemor qidirish (ism yoki telefon bo'yicha)
     public List<com.example.medicare_api.entity.Patient> searchPatients(String q) {
         Long adminId = securityUtils.getCurrentAdminId();
         if (adminId == null) {
@@ -183,11 +149,8 @@ public class ReceptionServiceImpl implements ReceptionService {
         }
         return patientRepository.searchByNameOrPhone(adminId, q);
     }
-
-    // Shifokor navbatidagi kutish vaqtini taxmin qilish (daqiqada)
     public int getWaitTime(Long doctorId) {
         long waitingCount = visitRepository.countByDoctorIdAndStatus(doctorId, VisitStatus.WAITING);
-        // Har bir bemor uchun o'rtacha 10 daqiqa
         return (int) (waitingCount * 10);
     }
-}
+}

@@ -1,10 +1,8 @@
 package com.example.medicare_api.payload.request;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,7 +13,7 @@ public class PatientVisitRequest {
     private Integer age;
     private String phone;
     private String reason;
-    private Long doctorId;   // Agar ko'rik bo'lsa tanlanadi
+    private Long doctorId;   
     private Long serviceId;
     private String paymentType;
-}
+}

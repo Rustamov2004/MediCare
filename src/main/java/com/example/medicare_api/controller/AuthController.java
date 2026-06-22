@@ -1,5 +1,4 @@
 package com.example.medicare_api.controller;
-
 import com.example.medicare_api.payload.request.LoginRequest;
 import com.example.medicare_api.payload.responce.JwtResponse;
 import com.example.medicare_api.service.AuthService;
@@ -11,22 +10,18 @@ import lombok.RequiredArgsConstructor;
 import java.time.LocalDateTime;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
-
     private final AuthService authService;
     private final SystemLogRepository systemLogRepository;
     private final SecurityUtils securityUtils;
-
     @PostMapping("/login")
     public ResponseEntity<JwtResponse> login(@RequestBody LoginRequest loginRequest) {
         JwtResponse response = authService.login(loginRequest);
         return ResponseEntity.ok(response);
     }
-    
     @PostMapping("/logout")
     public ResponseEntity<Void> logout() {
         User currentUser = securityUtils.getCurrentUser();
@@ -41,4 +36,4 @@ public class AuthController {
         }
         return ResponseEntity.ok().build();
     }
-}
+}

@@ -1,11 +1,8 @@
 package com.example.medicare_api.payload.responce;
-
 import com.example.medicare_api.entity.CashShift;
 import lombok.Builder;
 import lombok.Data;
-
 import java.time.LocalDateTime;
-
 @Data
 @Builder
 public class ShiftResponse {
@@ -14,13 +11,12 @@ public class ShiftResponse {
     private LocalDateTime closedAt;
     private Double expectedCash;
     private Double actualCash;
-    private Double cardAmount; // expected card
+    private Double cardAmount; 
     private Double actualCard;
     private Double differenceAmount;
     private String status;
     private String comment;
     private String closedByFullName;
-
     public static ShiftResponse fromEntity(CashShift shift) {
         return ShiftResponse.builder()
                 .id(shift.getId())
@@ -36,4 +32,4 @@ public class ShiftResponse {
                 .closedByFullName(shift.getClosedBy() != null ? shift.getClosedBy().getFullName() : null)
                 .build();
     }
-}
+}

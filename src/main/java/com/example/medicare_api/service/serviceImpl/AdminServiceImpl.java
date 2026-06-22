@@ -1,5 +1,4 @@
 package com.example.medicare_api.service.serviceImpl;
-
 import com.example.medicare_api.entity.MedicalService;
 import com.example.medicare_api.entity.User;
 import com.example.medicare_api.entity.Visit;
@@ -23,17 +22,14 @@ import com.example.medicare_api.repository.InventoryMovementRepository;
 import com.example.medicare_api.service.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import com.example.medicare_api.enums.Role;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
-
       private final UserRepository userRepository;
       private final MedicalServiceRepository medicalServiceRepository;
       private final VisitRepository visitRepository;
@@ -52,10 +48,8 @@ public class AdminServiceImpl implements AdminService {
       private final com.example.medicare_api.repository.ServiceRecipeItemRepository serviceRecipeItemRepository;
       private final com.example.medicare_api.service.InventoryMovementService movementService;
       private final InventoryMovementRepository movementRepository;
-
     @Override
     public UserResponse saveUser(UserRequest request) {
-        // Generate logic from name (Ali Valiyev -> ali_valiyev)
         String baseUsername = request.getFullName().toLowerCase().trim().replaceAll("\\s+", "_");
         String username = baseUsername;
         int counter = 1;
@@ -63,64 +57,46 @@ public class AdminServiceImpl implements AdminService {
             username = baseUsername + "_" + counter;
             counter++;
         }
-
-        // Generate a random 6-character password
         String rawPassword = java.util.UUID.randomUUID().toString().substring(0, 6);
-
         User entity = userMapper.toEntity(request);
         entity.setAdminId(securityUtils.getCurrentAdminId());
         entity.setUsername(username);
         entity.setPassword(passwordEncoder.encode(rawPassword));
         entity.setPlainPassword(rawPassword);
-
         User savedUser = userRepository.save(entity);
-
         UserResponse response = userMapper.toResponse(savedUser);
-        response.setPassword(rawPassword); // Show this in the modal
+        response.setPassword(rawPassword); 
         return response;
     }
-
     @Override
     public UserResponse updateUser(Long id, UserRequest request) {
-
         User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User topilmadi"));
-
         user.setFullName(request.getFullName());
         user.setAddress(request.getAddress());
         user.setPhone(request.getPhone());
         user.setSpecialization(request.getSpecialization());
         user.setSalaryType(request.getSalaryType());
         user.setSalaryAmount(request.getSalaryAmount());
-        
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
             user.setPlainPassword(request.getPassword());
         }
-
         User updatedUser = userRepository.save(user);
         return userMapper.toResponse(updatedUser);
     }
-
     @Override
     public void deleteUser(Long id) {
-
         User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User topilmadi"));
-
         userRepository.delete(user);
     }
-
-
     @Override
     public List<UserResponse> getUsersByRole(Role role) {
         Long adminId = securityUtils.getCurrentAdminId();
         List<User> allByRole = adminId == null 
             ? userRepository.findAllByRole(role) 
             : userRepository.findAllByRoleAndAdminId(role, adminId);
-
         return userMapper.toResponseList(allByRole);
     }
-
-
     @Override
     public MedicalServiceResponse saveService(MedicalServiceRequest request) {
         Long adminId = securityUtils.getCurrentAdminId();
@@ -129,19 +105,15 @@ public class AdminServiceImpl implements AdminService {
                 throw new RuntimeException("Bu shifokor uchun narx allaqachon belgilangan!");
             }
         }
-
         MedicalService service = new MedicalService();
         service.setName(request.getName());
         service.setType(request.getType());
         service.setPrice(request.getPrice());
         service.setCheckup(request.isCheckup());
-        // CHECKUP uchun mutaxassislikni va shifokorni ham saqlaymiz
         service.setSpecialization(request.isCheckup() ? request.getSpecialization() : null);
         service.setDoctorId(request.isCheckup() ? request.getDoctorId() : null);
         service.setAdminId(adminId);
-
         MedicalService save = medicalServiceRepository.save(service);
-        
         if (request.getRecipes() != null) {
             for (RecipeItemRequest reqItem : request.getRecipes()) {
                 com.example.medicare_api.entity.InventoryItem invItem = inventoryItemRepository.findById(reqItem.getInventoryItemId()).orElse(null);
@@ -155,25 +127,18 @@ public class AdminServiceImpl implements AdminService {
             }
             save = medicalServiceRepository.save(save);
         }
-
         return medicalServiceMapper.toResponse(save);
     }
-
     @Override
     public MedicalServiceResponse updateService(Long id, MedicalServiceRequest request) {
-
         MedicalService service = medicalServiceRepository.findById(id).orElseThrow(() -> new RuntimeException("Medical service topilmadi"));
-
         service.setName(request.getName());
         service.setType(request.getType());
         service.setPrice(request.getPrice());
         service.setCheckup(request.isCheckup());
-        // CHECKUP uchun mutaxassislikni va shifokorni yangilaymiz
         service.setSpecialization(request.isCheckup() ? request.getSpecialization() : null);
         service.setDoctorId(request.isCheckup() ? request.getDoctorId() : null);
-
         service.getRecipes().clear();
-        
         if (request.getRecipes() != null) {
             for (RecipeItemRequest reqItem : request.getRecipes()) {
                 com.example.medicare_api.entity.InventoryItem invItem = inventoryItemRepository.findById(reqItem.getInventoryItemId()).orElse(null);
@@ -186,71 +151,52 @@ public class AdminServiceImpl implements AdminService {
                 }
             }
         }
-
         MedicalService save = medicalServiceRepository.save(service);
-
         return medicalServiceMapper.toResponse(save);
     }
-
     @Override
     public void deleteService(Long id) {
         try {
             medicalServiceRepository.deleteById(id);
-            medicalServiceRepository.flush(); // Xatoni shu yerda ushlash uchun
+            medicalServiceRepository.flush(); 
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
             throw new RuntimeException("Bu xizmatga (yoki narxga) oldin bemorlar biriktirilganligi (tarixi borligi) sababli uni o'chirib bo'lmaydi! Agar narx yoki nomni o'zgartirmoqchi bo'lsangiz, o'chirish o'rniga uni TAHRIRLANG!");
         }
     }
-
     @Override
     public List<MedicalServiceResponse> getAllServices() {
         Long adminId = securityUtils.getCurrentAdminId();
         List<MedicalService> services = adminId == null 
             ? medicalServiceRepository.findAll() 
             : medicalServiceRepository.findAllByAdminId(adminId);
-
         return medicalServiceMapper.toResponseList(services);
     }
-
     @Override
     public StatsResponse getDailyStats() {
-
         LocalDate today = LocalDate.now();
         LocalDateTime start = today.atStartOfDay();
         LocalDateTime end = today.atTime(LocalTime.MAX);
         Long adminId = securityUtils.getCurrentAdminId();
-
         List<Visit> visits = adminId == null 
             ? visitRepository.findAllByCreatedAtBetween(start, end)
             : visitRepository.findAllByAdminIdAndCreatedAtBetween(adminId, start, end);
-
-        // Rad etilgan va to'lanmagan muolajalarni statistikadan olib tashlaymiz
         visits = visits.stream()
             .filter(v -> v.getStatus() != com.example.medicare_api.enums.VisitStatus.REJECTED && v.getStatus() != com.example.medicare_api.enums.VisitStatus.UNPAID)
             .collect(java.util.stream.Collectors.toList());
-
         long count = visits.size();
-
         double sum = visits.stream().filter(v -> v.getPrice() != null).mapToDouble(Visit::getPrice).sum();
-
         double sumCash = visits.stream()
             .filter(v -> v.getPrice() != null && v.getPaymentType() == com.example.medicare_api.enums.PaymentType.CASH)
             .mapToDouble(Visit::getPrice).sum();
-
         double sumCard = visits.stream()
             .filter(v -> v.getPrice() != null && v.getPaymentType() == com.example.medicare_api.enums.PaymentType.CARD)
             .mapToDouble(Visit::getPrice).sum();
-
         long checkupCount = visits.stream().filter(v -> v.getService() != null && v.getService().getType() == ServiceType.CHECKUP).count();
-
         long procedureCount = visits.stream().filter(visit -> visit.getService() != null && visit.getService().getType() == ServiceType.PROCEDURE).count();
-
         double checkupSum = visits.stream().filter(visit -> visit.getService() != null && visit.getService().getType() == ServiceType.CHECKUP && visit.getPrice() != null)
                 .mapToDouble(Visit::getPrice).sum();
-
         double procedureSum = visits.stream().filter(visit -> visit.getService() != null && visit.getService().getType() == ServiceType.PROCEDURE && visit.getPrice() != null)
                 .mapToDouble(Visit::getPrice).sum();
-
         return StatsResponse.builder()
                 .checkupCount(checkupCount)
                 .checkupIncome(checkupSum)
@@ -264,44 +210,34 @@ public class AdminServiceImpl implements AdminService {
                 .procedureIncome(procedureSum)
                 .build();
     }
-
     @Override
     public com.example.medicare_api.payload.responce.FinanceSummaryResponse getFinanceSummary() {
         Long adminId = securityUtils.getCurrentAdminId();
-        
         LocalDate now = LocalDate.now();
         LocalDateTime startOfMonth = now.withDayOfMonth(1).atStartOfDay();
         LocalDateTime endOfMonth = now.withDayOfMonth(now.lengthOfMonth()).atTime(LocalTime.MAX);
-        
         LocalDateTime startOfYear = now.withDayOfYear(1).atStartOfDay();
         LocalDateTime endOfYear = now.withDayOfYear(now.lengthOfYear()).atTime(LocalTime.MAX);
-        
         List<Visit> monthlyVisits = adminId == null 
             ? visitRepository.findAllByCreatedAtBetween(startOfMonth, endOfMonth)
             : visitRepository.findAllByAdminIdAndCreatedAtBetween(adminId, startOfMonth, endOfMonth);
-            
         List<Visit> yearlyVisits = adminId == null 
             ? visitRepository.findAllByCreatedAtBetween(startOfYear, endOfYear)
             : visitRepository.findAllByAdminIdAndCreatedAtBetween(adminId, startOfYear, endOfYear);
-            
         double monthlyIncome = monthlyVisits.stream()
             .filter(v -> v.getStatus() != com.example.medicare_api.enums.VisitStatus.REJECTED && v.getStatus() != com.example.medicare_api.enums.VisitStatus.UNPAID)
             .filter(v -> v.getPrice() != null)
             .mapToDouble(Visit::getPrice)
             .sum();
-            
         double yearlyIncome = yearlyVisits.stream()
             .filter(v -> v.getStatus() != com.example.medicare_api.enums.VisitStatus.REJECTED && v.getStatus() != com.example.medicare_api.enums.VisitStatus.UNPAID)
             .filter(v -> v.getPrice() != null)
             .mapToDouble(Visit::getPrice)
             .sum();
-            
         List<User> activeEmployees = adminId == null 
             ? userRepository.findAllByActiveTrue()
             : userRepository.findAllByAdminIdAndActiveTrue(adminId);
-            
         double totalSalaries = 0.0;
-        
         for (User u : activeEmployees) {
             if (u.getSalaryAmount() != null) {
                 if ("MONTHLY".equals(u.getSalaryType())) {
@@ -318,9 +254,7 @@ public class AdminServiceImpl implements AdminService {
                 }
             }
         }
-        
         double netProfit = monthlyIncome - totalSalaries;
-        
         return com.example.medicare_api.payload.responce.FinanceSummaryResponse.builder()
             .monthlyIncome(monthlyIncome)
             .yearlyIncome(yearlyIncome)
@@ -328,70 +262,50 @@ public class AdminServiceImpl implements AdminService {
             .netProfit(netProfit)
             .build();
     }
-
-
     @Override
     public List<VisitResponse> getPatientsByDateRange(LocalDate start, LocalDate end) {
-
         LocalDateTime today = start.atStartOfDay();
-
         LocalDateTime localDateTime = end.atTime(LocalTime.MAX);
         Long adminId = securityUtils.getCurrentAdminId();
-
         List<Visit> visits = adminId == null 
             ? visitRepository.findAllByCreatedAtBetween(today, localDateTime)
             : visitRepository.findAllByAdminIdAndCreatedAtBetween(adminId, today, localDateTime);
-
         return visitMapper.toResponseList(visits);
     }
-
     @Override
     public List<VisitResponse> searchPatientsByName(String name) {
         Long adminId = securityUtils.getCurrentAdminId();
         List<Visit> visits = adminId == null 
             ? visitRepository.searchByPatientName(name)
             : visitRepository.searchByPatientNameAndAdminId(adminId, name);
-
         return visitMapper.toResponseList(visits);
     }
-
     @Override
     public List<VisitResponse> getCompletedVisits(LocalDate date) {
-
         LocalDateTime start = date.atStartOfDay();
-
         LocalDateTime end = date.atTime(LocalTime.MAX);
         Long adminId = securityUtils.getCurrentAdminId();
-
         List<Visit> visits = adminId == null 
             ? visitRepository.findAllByStatusAndCreatedAtBetween(VisitStatus.COMPLETED, start, end)
             : visitRepository.findAllByAdminIdAndStatus(adminId, VisitStatus.COMPLETED);
-        // Note: Missing date range in findAllByAdminIdAndStatus but we'll accept it or need another query. Let's adjust filtering in memory if needed.
         if (adminId != null) {
             visits = visits.stream().filter(v -> !v.getCreatedAt().isBefore(start) && !v.getCreatedAt().isAfter(end)).toList();
         }
-
         return visitMapper.toResponseList(visits);
-
     }
-
     @Override
     public List<VisitResponse> getRejectedVisits(LocalDate date) {
         LocalDateTime start = date.atStartOfDay();
         LocalDateTime end = date.atTime(LocalTime.MAX);
         Long adminId = securityUtils.getCurrentAdminId();
-
         List<Visit> visits = adminId == null 
             ? visitRepository.findAllByStatusAndCreatedAtBetween(VisitStatus.REJECTED, start, end)
             : visitRepository.findAllByAdminIdAndStatus(adminId, VisitStatus.REJECTED);
-        
         if (adminId != null) {
             visits = visits.stream().filter(v -> !v.getCreatedAt().isBefore(start) && !v.getCreatedAt().isAfter(end)).toList();
         }
-
         return visitMapper.toResponseList(visits);
     }
-
     @Override
     public List<VisitResponse> getProcedureHistory() {
         Long adminId = securityUtils.getCurrentAdminId();
@@ -400,11 +314,9 @@ public class AdminServiceImpl implements AdminService {
                 : visitRepository.findProcedureHistoryByAdminId(adminId);
         return visitMapper.toResponseList(history);
     }
-
     @Override
     public VisitResponse updateVisit(Long id, com.example.medicare_api.payload.request.PatientVisitRequest request) {
         Visit visit = visitRepository.findById(id).orElseThrow(() -> new RuntimeException("Visit topilmadi"));
-        
         com.example.medicare_api.entity.Patient patient = visit.getPatient();
         if (patient != null) {
             patient.setFullName(request.getFullName());
@@ -413,29 +325,24 @@ public class AdminServiceImpl implements AdminService {
             patient.setAge(request.getAge());
             patientRepository.save(patient);
         }
-
         if (request.getDoctorId() != null) {
             User doctor = userRepository.findById(request.getDoctorId()).orElseThrow(() -> new RuntimeException("Shifokor topilmadi"));
             visit.setDoctor(doctor);
         }
-
         if (request.getServiceId() != null) {
             MedicalService service = medicalServiceRepository.findById(request.getServiceId()).orElseThrow(() -> new RuntimeException("Xizmat topilmadi"));
             visit.setService(service);
             visit.setPrice(service.getPrice());
         }
-
         visit.setReason(request.getReason());
         Visit saved = visitRepository.save(visit);
         return visitMapper.toResponse(saved);
     }
-
     @Override
     public void deleteVisit(Long id) {
         Visit visit = visitRepository.findById(id).orElseThrow(() -> new RuntimeException("Visit topilmadi"));
         visitRepository.delete(visit);
     }
-
     @Override
     public UserResponse getMe() {
         Long adminId = securityUtils.getCurrentAdminId();
@@ -445,7 +352,6 @@ public class AdminServiceImpl implements AdminService {
         response.setClinicName(admin.getClinicName());
         return response;
     }
-
     @Override
     public UserResponse updateClinicName(String clinicName) {
         Long adminId = securityUtils.getCurrentAdminId();
@@ -456,32 +362,24 @@ public class AdminServiceImpl implements AdminService {
         response.setClinicName(saved.getClinicName());
         return response;
     }
-
     @Override
     public List<com.example.medicare_api.payload.responce.SalaryResponse> getSalaries(LocalDate start, LocalDate end) {
         Long adminId = securityUtils.getCurrentAdminId();
-        
         LocalDateTime startOfDay = start.atStartOfDay();
         LocalDateTime endOfDay = end.atTime(LocalTime.MAX);
-        
         List<Visit> visits = visitRepository.findAllByCreatedAtBetween(startOfDay, endOfDay)
                 .stream()
                 .filter(v -> v.getStatus() == VisitStatus.COMPLETED && 
                              v.getDoctor() != null && 
                              adminId.equals(v.getDoctor().getAdminId()))
                 .collect(java.util.stream.Collectors.toList());
-                
         java.util.Map<User, List<Visit>> visitsByDoctor = visits.stream()
                 .filter(v -> v.getDoctor() != null)
                 .collect(java.util.stream.Collectors.groupingBy(Visit::getDoctor));
-                
         List<User> employees = userRepository.findAllByAdminId(adminId).stream()
                 .filter(u -> u.getRole() == Role.DOCTOR || u.getRole() == Role.MEDSESTRA || u.getRole() == Role.RECEPTION)
                 .collect(java.util.stream.Collectors.toList());
-                
         List<com.example.medicare_api.entity.Transaction> allTransactions = transactionRepository.findAllByAdminId(adminId);
-
-        // Admin jadvalidagi ish kunlari raqamlarini olish (1-31)
         User admin = userRepository.findById(adminId).orElse(null);
         java.util.Set<Integer> workDayNumbers = new java.util.HashSet<>();
         if (admin != null && admin.getWorkDates() != null && !admin.getWorkDates().isBlank()) {
@@ -489,18 +387,14 @@ public class AdminServiceImpl implements AdminService {
                 try { workDayNumbers.add(Integer.parseInt(d.trim())); } catch (NumberFormatException ignored) {}
             }
         }
-
         List<com.example.medicare_api.payload.responce.SalaryResponse> finalSalaries = new java.util.ArrayList<>();
         for(User emp : employees) {
             List<Visit> empVisits = visitsByDoctor.getOrDefault(emp, new java.util.ArrayList<>());
             double totalRevenue = empVisits.stream().mapToDouble(v -> v.getPrice() != null ? v.getPrice() : 0.0).sum();
-            
             String type = emp.getSalaryType();
             double amount = emp.getSalaryAmount() != null ? emp.getSalaryAmount() : 0.0;
             double calculatedSalary = 0.0;
-
             if ("DAILY".equalsIgnoreCase(type)) {
-                // Ish kunlari raqamlari bo'yicha hisoblash: start-end orasida nechta ish kuni bor
                 long workedDays;
                 if (!workDayNumbers.isEmpty()) {
                     workedDays = start.datesUntil(end.plusDays(1))
@@ -511,10 +405,8 @@ public class AdminServiceImpl implements AdminService {
                 }
                 calculatedSalary = workedDays * amount;
             } else if ("MONTHLY".equalsIgnoreCase(type)) {
-                // Oylik maosh: oyda nechtasi ish kuni bo'lsa, shunchaga bo'lib hisoblaymiz
                 long totalWorkDaysInMonth;
                 if (!workDayNumbers.isEmpty()) {
-                    // Joriy oyda qancha ish kuni bor (start oyiga qarab)
                     LocalDate firstOfMonth = start.withDayOfMonth(1);
                     LocalDate lastOfMonth = start.withDayOfMonth(start.lengthOfMonth());
                     totalWorkDaysInMonth = firstOfMonth.datesUntil(lastOfMonth.plusDays(1))
@@ -532,18 +424,13 @@ public class AdminServiceImpl implements AdminService {
             } else if ("PERCENTAGE".equalsIgnoreCase(type)) {
                 calculatedSalary = totalRevenue * (amount / 100.0);
             }
-            
-            // Xodim tranzaksiyalarini hisoblash
             List<com.example.medicare_api.entity.Transaction> empTrans = allTransactions.stream()
                 .filter(t -> t.getUser().getId().equals(emp.getId()))
                 .toList();
-                
             double totalPaid = empTrans.stream().filter(t -> t.getType() == com.example.medicare_api.enums.TransactionType.PAYMENT).mapToDouble(t -> t.getAmount()).sum();
             double totalBonus = empTrans.stream().filter(t -> t.getType() == com.example.medicare_api.enums.TransactionType.BONUS).mapToDouble(t -> t.getAmount()).sum();
             double totalPenalty = empTrans.stream().filter(t -> t.getType() == com.example.medicare_api.enums.TransactionType.PENALTY).mapToDouble(t -> t.getAmount()).sum();
-            
             double balance = calculatedSalary + totalBonus - totalPenalty - totalPaid;
-
             finalSalaries.add(com.example.medicare_api.payload.responce.SalaryResponse.builder()
                 .userId(emp.getId())
                 .fullName(emp.getFullName())
@@ -563,69 +450,53 @@ public class AdminServiceImpl implements AdminService {
         }
         return finalSalaries;
     }
-
-
     @Override
     public UserResponse updateUserSalary(Long id, com.example.medicare_api.payload.request.SalaryUpdateRequest request) {
         User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User topilmadi"));
         Long adminId = securityUtils.getCurrentAdminId();
-        
         if (adminId != null && !adminId.equals(user.getAdminId())) {
             throw new RuntimeException("Sizga tegishli bo'lmagan xodim!");
         }
-
         user.setSalaryType(request.getSalaryType());
         user.setSalaryAmount(request.getSalaryAmount());
         User saved = userRepository.save(user);
         return userMapper.toResponse(saved);
     }
-
     @Override
     public UserResponse updateUserSchedule(Long id, com.example.medicare_api.payload.request.WorkScheduleUpdateRequest request) {
         User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User topilmadi"));
         Long adminId = securityUtils.getCurrentAdminId();
-        
         if (adminId != null && !adminId.equals(user.getAdminId())) {
             throw new RuntimeException("Sizga tegishli bo'lmagan xodim!");
         }
-
         String workDatesStr = request.getWorkDates() != null ? 
             String.join(",", request.getWorkDates()) : "";
         String restDatesStr = request.getRestDates() != null ? 
             String.join(",", request.getRestDates()) : "";
-            
         user.setWorkDates(workDatesStr);
         user.setRestDates(restDatesStr);
         User saved = userRepository.save(user);
-
-        // Bildirishnoma saqlash
         notificationRepository.save(com.example.medicare_api.entity.Notification.builder()
                 .user(saved)
                 .message("Admin ish jadvalingizni yangiladi. Jadvalingizni tekshiring.")
                 .isRead(false)
                 .createdAt(LocalDateTime.now())
                 .build());
-
         return userMapper.toResponse(saved);
     }
-    
     @Override
     public UserResponse updateClinicSchedule(com.example.medicare_api.payload.request.WorkScheduleUpdateRequest request) {
         Long adminId = securityUtils.getCurrentAdminId();
         User admin = userRepository.findById(adminId).orElseThrow(() -> new RuntimeException("Klinika topilmadi"));
-
         String workDatesStr = request.getWorkDates() != null ? 
             String.join(",", request.getWorkDates()) : "";
         String restDatesStr = request.getRestDates() != null ? 
             String.join(",", request.getRestDates()) : "";
-            
         admin.setWorkDates(workDatesStr);
         admin.setRestDates(restDatesStr);
         User saved = userRepository.save(admin);
-
         return userMapper.toResponse(saved);
     }
-    
     @Override
     public List<com.example.medicare_api.payload.responce.TransactionResponse> getUserTransactions(Long userId) {
         Long adminId = securityUtils.getCurrentAdminId();
@@ -639,16 +510,13 @@ public class AdminServiceImpl implements AdminService {
                 .createdAt(t.getCreatedAt())
                 .build()).collect(java.util.stream.Collectors.toList());
     }
-
     @Override
     public com.example.medicare_api.payload.responce.TransactionResponse addTransaction(com.example.medicare_api.payload.request.TransactionRequest request) {
         Long adminId = securityUtils.getCurrentAdminId();
         User user = userRepository.findById(request.getUserId()).orElseThrow(() -> new RuntimeException("Xodim topilmadi"));
-        
         if (adminId != null && !adminId.equals(user.getAdminId())) {
             throw new RuntimeException("Sizga tegishli bo'lmagan xodim!");
         }
-
         com.example.medicare_api.entity.Transaction t = com.example.medicare_api.entity.Transaction.builder()
                 .user(user)
                 .adminId(adminId)
@@ -656,17 +524,13 @@ public class AdminServiceImpl implements AdminService {
                 .type(request.getType())
                 .description(request.getDescription())
                 .build();
-                
         t = transactionRepository.save(t);
-        
-        // Add Notification
         String message = "";
         if (request.getType() == com.example.medicare_api.enums.TransactionType.BONUS) {
             message = String.format("Sizga %s so'm miqdorida bonus yozildi. Izoh: %s", request.getAmount(), request.getDescription());
         } else if (request.getType() == com.example.medicare_api.enums.TransactionType.PENALTY) {
             message = String.format("Sizga %s so'm miqdorida jarima yozildi. Izoh: %s", request.getAmount(), request.getDescription());
         }
-        
         if (!message.isEmpty()) {
             notificationRepository.save(com.example.medicare_api.entity.Notification.builder()
                 .user(user)
@@ -675,7 +539,6 @@ public class AdminServiceImpl implements AdminService {
                 .createdAt(java.time.LocalDateTime.now())
                 .build());
         }
-        
         return com.example.medicare_api.payload.responce.TransactionResponse.builder()
                 .id(t.getId())
                 .userId(t.getUser().getId())
@@ -685,7 +548,6 @@ public class AdminServiceImpl implements AdminService {
                 .createdAt(t.getCreatedAt())
                 .build();
     }
-
     @Override
     public com.example.medicare_api.payload.responce.InventoryItemResponse saveInventoryItem(com.example.medicare_api.payload.request.InventoryItemRequest request) {
         Long adminId = securityUtils.getCurrentAdminId();
@@ -698,15 +560,12 @@ public class AdminServiceImpl implements AdminService {
         movementService.logMovement(saved, "ADD", saved.getQuantity(), "Yangi tovar omborga qo'shildi", securityUtils.getCurrentUser());
         return inventoryMapper.toResponse(saved);
     }
-
     @Override
     public com.example.medicare_api.payload.responce.InventoryItemResponse updateInventoryItem(Long id, com.example.medicare_api.payload.request.InventoryItemRequest request) {
         Long adminId = securityUtils.getCurrentAdminId();
         com.example.medicare_api.entity.InventoryItem item = inventoryItemRepository.findById(id).orElseThrow(() -> new RuntimeException("Item not found"));
         if (!item.getAdminId().equals(adminId)) throw new RuntimeException("Unauthorized");
-        
         int oldQuantity = item.getQuantity();
-        
         item.setName(request.getName());
         item.setDescription(request.getDescription());
         item.setQuantity(request.getQuantity());
@@ -718,17 +577,13 @@ public class AdminServiceImpl implements AdminService {
         } else {
             item.setCategory(null);
         }
-        
         int diff = request.getQuantity() - oldQuantity;
         com.example.medicare_api.entity.InventoryItem saved = inventoryItemRepository.save(item);
-        
         if (diff != 0) {
             movementService.logMovement(saved, "UPDATE", diff, "Omborchi tomonidan qoldiq o'zgartirildi", securityUtils.getCurrentUser());
         }
-        
         return inventoryMapper.toResponse(saved);
     }
-
     @Override
     public void deleteInventoryItem(Long id) {
         Long adminId = securityUtils.getCurrentAdminId();
@@ -736,19 +591,16 @@ public class AdminServiceImpl implements AdminService {
         if (!item.getAdminId().equals(adminId)) throw new RuntimeException("Unauthorized");
         inventoryItemRepository.delete(item);
     }
-
     @Override
     public List<com.example.medicare_api.payload.responce.InventoryItemResponse> getAllInventoryItems() {
         Long adminId = securityUtils.getCurrentAdminId();
         return inventoryMapper.toResponseList(inventoryItemRepository.findAllByAdminId(adminId));
     }
-    
     @Override
     public List<com.example.medicare_api.payload.responce.InventoryMovementResponse> getInventoryItemHistory(Long itemId) {
         Long adminId = securityUtils.getCurrentAdminId();
         com.example.medicare_api.entity.InventoryItem item = inventoryItemRepository.findById(itemId).orElseThrow(() -> new RuntimeException("Item not found"));
         if (!java.util.Objects.equals(item.getAdminId(), adminId)) throw new RuntimeException("Unauthorized");
-        
         return movementRepository.findByInventoryItemIdOrderByCreatedAtDesc(itemId).stream().map(m -> 
             com.example.medicare_api.payload.responce.InventoryMovementResponse.builder()
                 .id(m.getId())
@@ -762,7 +614,6 @@ public class AdminServiceImpl implements AdminService {
                 .build()
         ).toList();
     }
-
     @Override
     public com.example.medicare_api.payload.responce.InventoryCategoryResponse saveInventoryCategory(com.example.medicare_api.payload.request.InventoryCategoryRequest request) {
         Long adminId = securityUtils.getCurrentAdminId();
@@ -773,7 +624,6 @@ public class AdminServiceImpl implements AdminService {
         category = inventoryCategoryRepository.save(category);
         return com.example.medicare_api.payload.responce.InventoryCategoryResponse.builder().id(category.getId()).name(category.getName()).build();
     }
-
     @Override
     public com.example.medicare_api.payload.responce.InventoryCategoryResponse updateInventoryCategory(Long id, com.example.medicare_api.payload.request.InventoryCategoryRequest request) {
         Long adminId = securityUtils.getCurrentAdminId();
@@ -783,13 +633,11 @@ public class AdminServiceImpl implements AdminService {
         category = inventoryCategoryRepository.save(category);
         return com.example.medicare_api.payload.responce.InventoryCategoryResponse.builder().id(category.getId()).name(category.getName()).build();
     }
-
     @Override
     public void deleteInventoryCategory(Long id) {
         Long adminId = securityUtils.getCurrentAdminId();
         com.example.medicare_api.entity.InventoryCategory category = inventoryCategoryRepository.findById(id).orElseThrow(() -> new RuntimeException("Category not found"));
         if (!category.getAdminId().equals(adminId)) throw new RuntimeException("Unauthorized");
-        // Update items to null category
         List<com.example.medicare_api.entity.InventoryItem> items = inventoryItemRepository.findAllByAdminId(adminId);
         for(com.example.medicare_api.entity.InventoryItem item : items) {
             if(item.getCategory() != null && item.getCategory().getId().equals(id)) {
@@ -799,7 +647,6 @@ public class AdminServiceImpl implements AdminService {
         }
         inventoryCategoryRepository.delete(category);
     }
-
     @Override
     public List<com.example.medicare_api.payload.responce.InventoryCategoryResponse> getAllInventoryCategories() {
         Long adminId = securityUtils.getCurrentAdminId();
@@ -807,39 +654,31 @@ public class AdminServiceImpl implements AdminService {
                 .map(c -> com.example.medicare_api.payload.responce.InventoryCategoryResponse.builder().id(c.getId()).name(c.getName()).build())
                 .collect(java.util.stream.Collectors.toList());
     }
-
-    // Har bir shifokor uchun statistika
     public List<com.example.medicare_api.payload.responce.DoctorStatsResponse> getDoctorStats() {
         Long adminId = securityUtils.getCurrentAdminId();
         List<User> doctors = adminId == null
                 ? userRepository.findAllByRole(com.example.medicare_api.enums.Role.DOCTOR)
                 : userRepository.findAllByRoleAndAdminId(com.example.medicare_api.enums.Role.DOCTOR, adminId);
-
         java.time.LocalDate today = java.time.LocalDate.now();
         java.time.LocalDateTime start = today.atStartOfDay();
         java.time.LocalDateTime end = today.atTime(java.time.LocalTime.MAX);
-
         List<com.example.medicare_api.payload.responce.DoctorStatsResponse> result = new java.util.ArrayList<>();
         for (User doctor : doctors) {
             List<com.example.medicare_api.entity.Visit> todayVisits =
                     visitRepository.findByDoctorIdAndCompletedToday(doctor.getId(), start, end);
             List<com.example.medicare_api.entity.Visit> allVisits =
                     visitRepository.findAllByDoctorIdAndStatus(doctor.getId(), VisitStatus.COMPLETED);
-
             double totalRevenue = todayVisits.stream()
                     .mapToDouble(v -> v.getPrice() != null ? v.getPrice() : 0.0).sum();
-            
             String type = doctor.getSalaryType();
             double amount = doctor.getSalaryAmount() != null ? doctor.getSalaryAmount() : 0.0;
             double calculatedSalary = 0.0;
-
             if ("DAILY".equalsIgnoreCase(type)) {
-                calculatedSalary = amount; // bugungi maosh
+                calculatedSalary = amount; 
             } else if ("MONTHLY".equalsIgnoreCase(type)) {
                 int lengthOfMonth = today.lengthOfMonth();
-                calculatedSalary = amount / lengthOfMonth; // bugungi maosh (1 kunlik ulushi)
+                calculatedSalary = amount / lengthOfMonth; 
             }
-
             result.add(com.example.medicare_api.payload.responce.DoctorStatsResponse.builder()
                     .doctorId(doctor.getId())
                     .doctorName(doctor.getFullName())
@@ -854,42 +693,34 @@ public class AdminServiceImpl implements AdminService {
         }
         return result;
     }
-
     @Override
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public com.example.medicare_api.payload.responce.ShiftResponse getCurrentShiftStats() {
         com.example.medicare_api.entity.CashShift openShift = cashShiftRepository.findFirstByStatusOrderByOpenedAtDesc(com.example.medicare_api.entity.CashShift.ShiftStatus.OPEN)
                 .orElse(null);
-
         LocalDateTime startTime;
         if (openShift != null) {
             startTime = openShift.getOpenedAt();
         } else {
-            // Agar ochiq smena bo'lmasa, oxirgi yopilganidan keyingi vaqtni yoki bugungi kun boshini olamiz
             com.example.medicare_api.entity.CashShift lastClosed = cashShiftRepository.findFirstByStatusOrderByOpenedAtDesc(com.example.medicare_api.entity.CashShift.ShiftStatus.CLOSED)
                     .orElse(null);
             startTime = (lastClosed != null && lastClosed.getClosedAt().toLocalDate().isEqual(LocalDate.now())) 
                             ? lastClosed.getClosedAt() 
                             : LocalDate.now().atStartOfDay();
         }
-
         Long adminId = securityUtils.getCurrentAdminId();
         List<Visit> visits = adminId == null 
             ? visitRepository.findAllByCreatedAtBetween(startTime, LocalDateTime.now())
             : visitRepository.findAllByAdminIdAndCreatedAtBetween(adminId, startTime, LocalDateTime.now());
-
         visits = visits.stream()
             .filter(v -> v.getStatus() != com.example.medicare_api.enums.VisitStatus.REJECTED && v.getStatus() != com.example.medicare_api.enums.VisitStatus.UNPAID)
             .collect(java.util.stream.Collectors.toList());
-
         double expectedCash = visits.stream()
             .filter(v -> v.getPrice() != null && v.getPaymentType() == com.example.medicare_api.enums.PaymentType.CASH)
             .mapToDouble(Visit::getPrice).sum();
-
         double cardAmount = visits.stream()
             .filter(v -> v.getPrice() != null && v.getPaymentType() == com.example.medicare_api.enums.PaymentType.CARD)
             .mapToDouble(Visit::getPrice).sum();
-
         if (openShift == null) {
             return com.example.medicare_api.payload.responce.ShiftResponse.builder()
                     .expectedCash(expectedCash)
@@ -898,51 +729,39 @@ public class AdminServiceImpl implements AdminService {
                     .status("OPEN")
                     .build();
         }
-
         return com.example.medicare_api.payload.responce.ShiftResponse.fromEntity(openShift);
     }
-
     @Override
     @org.springframework.transaction.annotation.Transactional
     public com.example.medicare_api.payload.responce.ShiftResponse closeCurrentShift(com.example.medicare_api.payload.request.CloseShiftRequest request, Long adminId) {
         com.example.medicare_api.payload.responce.ShiftResponse currentStats = getCurrentShiftStats();
-        
         com.example.medicare_api.entity.CashShift shiftToClose = cashShiftRepository.findFirstByStatusOrderByOpenedAtDesc(com.example.medicare_api.entity.CashShift.ShiftStatus.OPEN)
                 .orElse(com.example.medicare_api.entity.CashShift.builder()
                         .openedAt(currentStats.getOpenedAt())
                         .status(com.example.medicare_api.entity.CashShift.ShiftStatus.OPEN)
                         .build());
-
         shiftToClose.setExpectedCash(currentStats.getExpectedCash());
         shiftToClose.setCardAmount(currentStats.getCardAmount());
         shiftToClose.setActualCash(request.getActualCash());
         shiftToClose.setActualCard(request.getActualCard());
-        
         double expectedTotal = currentStats.getExpectedCash() + currentStats.getCardAmount();
         double actualTotal = request.getActualCash() + request.getActualCard();
         shiftToClose.setDifferenceAmount(actualTotal - expectedTotal);
-        
         shiftToClose.setComment(request.getComment());
         shiftToClose.setClosedAt(LocalDateTime.now());
         shiftToClose.setStatus(com.example.medicare_api.entity.CashShift.ShiftStatus.CLOSED);
-
         if (adminId != null) {
             User admin = userRepository.findById(adminId).orElse(null);
             shiftToClose.setClosedBy(admin);
         }
-
         cashShiftRepository.save(shiftToClose);
-
-        // Yangi smena ochamiz
         com.example.medicare_api.entity.CashShift newShift = com.example.medicare_api.entity.CashShift.builder()
                 .openedAt(LocalDateTime.now())
                 .status(com.example.medicare_api.entity.CashShift.ShiftStatus.OPEN)
                 .build();
         cashShiftRepository.save(newShift);
-
         return com.example.medicare_api.payload.responce.ShiftResponse.fromEntity(shiftToClose);
     }
-
     @Override
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<com.example.medicare_api.payload.responce.ShiftResponse> getShiftHistory() {
@@ -952,5 +771,4 @@ public class AdminServiceImpl implements AdminService {
                 .map(com.example.medicare_api.payload.responce.ShiftResponse::fromEntity)
                 .collect(java.util.stream.Collectors.toList());
     }
-}
-
+}

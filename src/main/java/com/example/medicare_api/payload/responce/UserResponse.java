@@ -1,12 +1,9 @@
 package com.example.medicare_api.payload.responce;
-
 import com.example.medicare_api.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,11 +19,10 @@ public class UserResponse {
     private String clinicName;
     private Role role;
     private String username;
-    private String password; // used for returning generated passwords
-    private String token; // used for returning new token on profile update
+    private String password; 
+    private String token; 
     private String workDates;
     private String restDates;
-
     private java.time.LocalDate subscriptionEndDate;
     private Boolean isSubscriptionActive;
-}
+}

@@ -1,10 +1,8 @@
 package com.example.medicare_api.payload.responce;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,4 +19,4 @@ public class StatsResponse {
    private Double totalIncome;
    private Double checkupIncome;
    private Double procedureIncome;
-}
+}

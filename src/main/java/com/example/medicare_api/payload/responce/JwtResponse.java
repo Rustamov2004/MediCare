@@ -1,12 +1,9 @@
 package com.example.medicare_api.payload.responce;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import com.example.medicare_api.enums.Role;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,4 +15,4 @@ public class JwtResponse {
     private Role role;
     private String fullName;
     private String clinicName;
-}
+}
